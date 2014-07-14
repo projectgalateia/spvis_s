@@ -1,3 +1,7 @@
+#if _WIN32
+#include <Windows.h>
+#endif // _WIN32
+
 #include <GL/gl.h>
 #include <GL/glut.h>
 
@@ -6,14 +10,29 @@
 #include <cmath>
 
 #include <map>
+#include <thread>
+#include <mutex>
 
 #include "spvis.hpp"
 
+static std::mutex thread_mutex;
+
 static TrainData points;
-
-Classifiers classifiers;
-
 static Classifier *classifier = NULL;
+
+Classifiers &getClassifiers()
+{
+	static Classifiers c;
+
+	return c;
+}
+
+void registerClassifier(const std::string &name, Classifier *c)
+{
+	auto &cs = getClassifiers();
+
+	cs[name] = c;
+}
 
 static int window_w;
 static int window_h;
@@ -24,8 +43,7 @@ static void display()
 
 	glMatrixMode(GL_MODELVIEW);
 
-	classifier->step();
-
+	thread_mutex.lock();
 	glPointSize(1);
 	for (int i = 0; i < window_h; ++i) {
 		for (int j = 0; j < window_w; ++j) {
@@ -33,17 +51,19 @@ static void display()
 			Likelihood l;
 
 			classifier->classify(p, l);
+			l.normalize();
 
 			float d = std::abs(l.class1 - l.class2);
 			float c = 1 - d;
 
-			glColor3f(c + l.class1 * d, c, c + l.class2 * d);
+			glColor3f(l.class1 + (1 - l.class1) * c, c, l.class2 + (1 - l.class2) * c);
 
 			glBegin(GL_POINTS);
 			glVertex2i(j, i);
 			glEnd();
 		}
 	}
+	thread_mutex.unlock();
 
 	glPointSize(7);
 	glColor3f(0.0f, 0.0f, 0.0f);
@@ -81,8 +101,15 @@ static void reshape(int w, int h)
 
 static void keyboard(unsigned char key, int x, int y)
 {
-	if (key == 27) {
+	if (key == 27 || key == 'q') {
 		exit(0);
+	}
+
+	if (key == 'r') {
+		points.clear();
+		thread_mutex.lock();
+		classifier->initialize(points);
+		thread_mutex.unlock();
 	}
 }
 
@@ -99,17 +126,30 @@ static void mouse(int button, int state, int x, int y)
 
 	points[p] = {(button == GLUT_LEFT_BUTTON ? 1.0f : 0.0f), (button == GLUT_RIGHT_BUTTON ? 1.0f : 0.0f)};
 
+	thread_mutex.lock();
 	classifier->initialize(points);
+	thread_mutex.unlock();
 }
 
 int main(int argc, char **argv)
 {
+	const auto &classifiers = getClassifiers();
+
 	if (classifiers.size() == 0) {
 		fprintf(stderr, "No Classifier compiled\n");
 		return 1;
 	}
 
 	classifier = classifiers.begin()->second;
+
+	std::thread step_thread([]()
+	{
+		while (true) {
+			thread_mutex.lock();
+			classifier->step();
+			thread_mutex.unlock();
+		}
+	});
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
