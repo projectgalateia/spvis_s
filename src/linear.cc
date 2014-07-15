@@ -24,7 +24,7 @@ public:
 		C = 0.0f;
 		dt = 0.5f;
 
-		//registerClassifier("Linear Classifier", this);
+		registerClassifier("Linear Classifier", this);
 	}
 
 	void initialize(const TrainData &data)
@@ -35,7 +35,9 @@ public:
 
 	void step()
 	{
-#pragma omp parallel for reduction(+:A, +:B, +:C)
+		float dA, dB, dC;
+
+#pragma omp parallel for reduction(+:dA,dB,dC)
 		for (int i = 0; i < data.size(); ++i) {
 			const auto &d = data[i];
 
@@ -44,10 +46,14 @@ public:
 
 			v = y - v;
 
-			A += v * d.first.x * dt;
-			B += v * d.first.y * dt;
-			C += v * dt;
+			dA += v * d.first.x * dt;
+			dB += v * d.first.y * dt;
+			dC += v * dt;
 		}
+
+		A += dA;
+		B += dB;
+		C += dC;
 	}
 
 	void classify(const Point &point, Likelihood &l)

@@ -9,9 +9,13 @@
 #include <cstdlib>
 #include <cmath>
 
+#include <omp.h>
+
 #include <map>
+#include <vector>
 #include <thread>
 #include <mutex>
+#include <iostream>
 
 #include "spvis.hpp"
 
@@ -37,6 +41,11 @@ void registerClassifier(const std::string &name, Classifier *c)
 static int window_w;
 static int window_h;
 
+struct PointColor {
+	Point point;
+	float rgb[3];
+};
+
 static void display()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -45,25 +54,50 @@ static void display()
 
 	thread_mutex.lock();
 	glPointSize(1);
-	for (int i = 0; i < window_h; ++i) {
-		for (int j = 0; j < window_w; ++j) {
-			const Point p = {j, i};
-			Likelihood l;
 
-			classifier->classify(p, l);
-			l.normalize();
+	std::vector<std::vector<PointColor>> colors;
 
-			float d = std::abs(l.class1 - l.class2);
-			float c = 1 - d;
+#pragma omp parallel 
+	{
+		const int thread_num = omp_get_thread_num();
 
-			glColor3f(l.class1 + (1 - l.class1) * c, c, l.class2 + (1 - l.class2) * c);
+#pragma omp master
+		{
+			colors.resize(omp_get_num_threads());
+		}
+#pragma omp barrier
 
-			glBegin(GL_POINTS);
-			glVertex2i(j, i);
-			glEnd();
+#pragma omp for
+		for (int i = 0; i < window_h; ++i) {
+			for (int j = 0; j < window_w; ++j) {
+				const Point p = {j, i};
+				Likelihood l;
+
+				classifier->classify(p, l);
+				l.normalize();
+
+				float d = std::abs(l.class1 - l.class2);
+				float c = 1 - d;
+
+				float r = l.class1 + (1 - l.class1) * c;
+				float g = c;
+				float b = l.class2 + (1 - l.class2) * c;
+
+				colors[thread_num].push_back({p, {r, g, b}});
+			}
 		}
 	}
 	thread_mutex.unlock();
+
+	for (const auto &pcr : colors) {
+		for (const auto &pc : pcr) {
+			glColor3fv(pc.rgb);
+
+			glBegin(GL_POINTS);
+			glVertex2iv((int *)&pc.point);
+			glEnd();
+		}
+	}
 
 	glPointSize(7);
 	glColor3f(0.0f, 0.0f, 0.0f);
@@ -133,23 +167,41 @@ static void mouse(int button, int state, int x, int y)
 
 int main(int argc, char **argv)
 {
+	using namespace std;
+
 	const auto &classifiers = getClassifiers();
 
 	if (classifiers.size() == 0) {
-		fprintf(stderr, "No Classifier compiled\n");
+		cerr << "No Classifier compiled" << endl;
 		return 1;
 	}
 
-	classifier = classifiers.begin()->second;
+	int idx = -1;
+	std::vector<Classifier *> cvec;
+
+	cout << "Supported Classifiers:" << endl;
+
+	for (const auto &c : classifiers) {
+		cout << cvec.size() << "\t: " << c.first << endl;
+		cvec.push_back(c.second);
+	}
+
+	cout << "Select Classfier: ";
+
+	while (idx < 0 || idx > classifiers.size()) {
+		cin >> idx;
+	}
+
+	classifier = cvec[idx];
 
 	std::thread step_thread([]()
-	{
+		{
 		while (true) {
-			thread_mutex.lock();
-			classifier->step();
-			thread_mutex.unlock();
+		thread_mutex.lock();
+		classifier->step();
+		thread_mutex.unlock();
 		}
-	});
+		});
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);

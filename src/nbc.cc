@@ -32,17 +32,31 @@ public:
 			}
 		}
 
-#pragma omp parallel for reduction(+:mean[0][0], +:mean[0][1])
+		float t0, t1;
+
+		t0 = 0.0f;
+		t1=  0.0f;
+
+#pragma omp parallel for reduction(+:t0,t1)
 		for (int i = 0; i < vecs[0].size(); ++i) {
-			mean[0][0] += vecs[0][i].x;
-			mean[0][1] += vecs[0][i].y;
+			t0 += vecs[0][i].x;
+			t1 += vecs[0][i].y;
 		}
 
-#pragma omp parallel for reduction(+:mean[1][0], +:mean[1][1])
+		mean[0][0] = t0;
+		mean[0][1] = t1;
+
+		t0 = 0.0f;
+		t1=  0.0f;
+
+#pragma omp parallel for reduction(+:t0,t1)
 		for (int i = 0; i < vecs[1].size(); ++i) {
-			mean[1][0] += vecs[1][i].x;
-			mean[1][1] += vecs[1][i].y;
+			t0 += vecs[1][i].x;
+			t1 += vecs[1][i].y;
 		}
+
+		mean[1][0] = t0;
+		mean[1][1] = t1;
 
 		for (int i = 0; i < 2; ++i) {
 			for (int j = 0; j < 2; ++j) {
@@ -50,18 +64,30 @@ public:
 			}
 		}
 
-#pragma omp parallel for reduction(+:V[0][0], +:V[0][1])
+		t0 = 0.0f;
+		t1=  0.0f;
+
+#pragma omp parallel for reduction(+:t0,t1)
 		for (int i = 0; i < vecs[0].size(); ++i) {
-			V[0][0] += pow(vecs[0][i].x - mean[0][0], 2);
-			V[0][1] += pow(vecs[0][i].y - mean[0][1], 2);
+			t0 += pow(vecs[0][i].x - mean[0][0], 2);
+			t1 += pow(vecs[0][i].y - mean[0][1], 2);
 		}
 
-#pragma omp parallel for reduction(+:V[1][0], +:V[1][1])
+		V[0][0] = t0;
+		V[0][1] = t1;
+
+		t0 = 0.0f;
+		t1=  0.0f;
+
+#pragma omp parallel for reduction(+:t0,t1)
 		for (int i = 0; i < vecs[1].size(); ++i) {
-			V[1][0] += pow(vecs[1][i].x - mean[1][0], 2);
-			V[1][1] += pow(vecs[1][i].y - mean[1][1], 2);
+			t0 += pow(vecs[1][i].x - mean[1][0], 2);
+			t1 += pow(vecs[1][i].y - mean[1][1], 2);
 		}
 		
+		V[1][0] = t0;
+		V[1][1] = t1;
+
 		for (int i = 0; i < 2; ++i) {
 			for (int j = 0; j < 2; ++j) {
 				V[i][j] /= vecs[i].size();
