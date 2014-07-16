@@ -8,10 +8,6 @@ static class VoidClassifier : Classifier {
 private:
 
 public:
-	VoidClassifier()
-	{
-	}
-
 	void initialize(const TrainData &data)
 	{
 	}

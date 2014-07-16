@@ -9,7 +9,7 @@ private:
 	float A, B, C;
 	float dt;
 	
-	std::vector<std::pair<Point, Likelihood>> data;
+	TrainVector data;
 
 	inline float calc(const Point &p)
 	{
@@ -22,22 +22,20 @@ public:
 		A = 0.0f;
 		B = 0.0f;
 		C = 0.0f;
-		dt = 0.5f;
+		dt = 0.1f;
 
 		registerClassifier("Linear Classifier", this);
 	}
 
 	void initialize(const TrainData &data)
 	{
-		this->data.clear();
-		this->data.insert(this->data.begin(), data.begin(), data.end());
+		dataToVector(data, this->data);
 	}
 
 	void step()
 	{
 		float dA, dB, dC;
 
-#pragma omp parallel for reduction(+:dA,dB,dC)
 		for (int i = 0; i < data.size(); ++i) {
 			const auto &d = data[i];
 

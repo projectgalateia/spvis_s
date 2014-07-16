@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 struct Point {
 	int x;
@@ -38,6 +39,13 @@ struct Likelihood {
 };
 
 typedef std::map<Point, Likelihood> TrainData;
+typedef std::vector<std::pair<Point, Likelihood>> TrainVector;
+
+static void dataToVector(const TrainData &data, TrainVector &vec)
+{
+	vec.clear();
+	vec.insert(vec.begin(), data.begin(), data.end());
+}
 
 class Classifier {
 public:
@@ -51,5 +59,7 @@ typedef std::map<std::string, Classifier *> Classifiers;
 
 Classifiers &getClassifiers();
 void registerClassifier(const std::string &name, Classifier *c);
+
+void screen_prop(int &w, int &h);
 
 

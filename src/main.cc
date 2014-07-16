@@ -41,6 +41,12 @@ void registerClassifier(const std::string &name, Classifier *c)
 static int window_w;
 static int window_h;
 
+void screen_prop(int &w, int &h)
+{
+	w = window_w;
+	h = window_h;
+}
+
 struct PointColor {
 	Point point;
 	float rgb[3];
@@ -55,53 +61,34 @@ static void display()
 	thread_mutex.lock();
 	glPointSize(1);
 
-	std::vector<std::vector<PointColor>> colors;
+	for (int i = 0; i < window_h; ++i) {
+		for (int j = 0; j < window_w; ++j) {
+			const Point p = {j, i};
+			Likelihood l;
 
-#pragma omp parallel 
-	{
-		const int thread_num = omp_get_thread_num();
+			classifier->classify(p, l);
+			l.normalize();
 
-#pragma omp master
-		{
-			colors.resize(omp_get_num_threads());
-		}
-#pragma omp barrier
+			float d = std::abs(l.class1 - l.class2);
+			float c = 1 - d;
 
-#pragma omp for
-		for (int i = 0; i < window_h; ++i) {
-			for (int j = 0; j < window_w; ++j) {
-				const Point p = {j, i};
-				Likelihood l;
+			float r = l.class1 + (1 - l.class1) * c;
+			float g = c;
+			float b = l.class2 + (1 - l.class2) * c;
 
-				classifier->classify(p, l);
-				l.normalize();
+			glColor3f(r, g, b);
 
-				float d = std::abs(l.class1 - l.class2);
-				float c = 1 - d;
-
-				float r = l.class1 + (1 - l.class1) * c;
-				float g = c;
-				float b = l.class2 + (1 - l.class2) * c;
-
-				colors[thread_num].push_back({p, {r, g, b}});
-			}
+			glBegin(GL_POINTS);
+			glVertex2i(j, i);
+			glEnd();
 		}
 	}
 	thread_mutex.unlock();
 
-	for (const auto &pcr : colors) {
-		for (const auto &pc : pcr) {
-			glColor3fv(pc.rgb);
-
-			glBegin(GL_POINTS);
-			glVertex2iv((int *)&pc.point);
-			glEnd();
-		}
-	}
-
 	glPointSize(7);
 	glColor3f(0.0f, 0.0f, 0.0f);
 	glBegin(GL_POINTS);
+
 	for (const auto &v : points) {
 		glVertex2i(v.first.x, v.first.y);
 	}
