@@ -33,7 +33,7 @@ public:
 		registerClassifier("Perceptron", this);
 	}
 
-	void initialize(const TrainData &data)
+	void initialize(const TrainData &data, const TrainVector &vector) 
 	{
 		this->data = data;
 	}

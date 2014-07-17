@@ -41,15 +41,9 @@ struct Likelihood {
 typedef std::map<Point, Likelihood> TrainData;
 typedef std::vector<std::pair<Point, Likelihood>> TrainVector;
 
-static void dataToVector(const TrainData &data, TrainVector &vec)
-{
-	vec.clear();
-	vec.insert(vec.begin(), data.begin(), data.end());
-}
-
 class Classifier {
 public:
-	virtual void initialize(const TrainData &data) = 0;
+	virtual void initialize(const TrainData &data, const TrainVector &vector) = 0;
 	virtual void step() = 0;
 
 	virtual void classify(const Point &point, Likelihood &l) = 0;

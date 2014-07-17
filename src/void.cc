@@ -8,7 +8,7 @@ static class VoidClassifier : Classifier {
 private:
 
 public:
-	void initialize(const TrainData &data)
+	void initialize(const TrainData &data, const TrainVector &vector) 
 	{
 	}
 

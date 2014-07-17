@@ -22,6 +22,7 @@
 static std::mutex thread_mutex;
 
 static TrainData points;
+static TrainVector pvector;
 static Classifier *classifier = NULL;
 
 Classifiers &getClassifiers()
@@ -130,8 +131,10 @@ static void keyboard(unsigned char key, int x, int y)
 
 	if (key == 'r') {
 		points.clear();
+		pvector.clear();
+
 		thread_mutex.lock();
-		classifier->initialize(points);
+		classifier->initialize(points, pvector);
 		thread_mutex.unlock();
 	}
 
@@ -155,9 +158,10 @@ static void mouse(int button, int state, int x, int y)
 	Point p = {x, y};
 
 	points[p] = {(button == GLUT_LEFT_BUTTON ? 1.0f : 0.0f), (button == GLUT_RIGHT_BUTTON ? 1.0f : 0.0f)};
+	pvector.push_back(*points.find(p)); 
 
 	thread_mutex.lock();
-	classifier->initialize(points);
+	classifier->initialize(points, pvector);
 	thread_mutex.unlock();
 }
 

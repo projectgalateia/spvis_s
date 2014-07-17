@@ -27,9 +27,9 @@ public:
 		registerClassifier("Linear Classifier", this);
 	}
 
-	void initialize(const TrainData &data)
+	void initialize(const TrainData &data, const TrainVector &vector) 
 	{
-		dataToVector(data, this->data);
+		this->data = vector;
 	}
 
 	void step()

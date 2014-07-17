@@ -122,7 +122,7 @@ public:
 		registerClassifier("MLP", this);
 	}
 
-	void initialize(const TrainData &data)
+	void initialize(const TrainData &data, const TrainVector &vector) 
 	{
 		input.reset();
 		l1.reset();

@@ -17,7 +17,7 @@ public:
 		registerClassifier("NBC", this);
 	}
 
-	void initialize(const TrainData &data)
+	void initialize(const TrainData &data, const TrainVector &vector) 
 	{
 		std::vector<Point> vecs[2];
 
