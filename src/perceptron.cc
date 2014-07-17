@@ -47,19 +47,19 @@ public:
 
 			calc(d.first, l);
 
-			float v = 0.0f;
+			float y = d.second.class1 - d.second.class2;
+			float o = l.class1 - l.class2;
 
-			if (d.second.class1 > 0) {
-				v = 1 - l.class1;
-			} else {
-				v = 0 - l.class1;
+			if (y * o < 0) {
+				A += y * d.first.x * dt;
+				B += y * d.first.y * dt;
+				C += y * dt;
 			}
+
+			float v = y - o;
 
 			err += v * v;
 
-			A += v * d.first.x * dt;
-			B += v * d.first.y * dt;
-			C += v * dt;
 		}
 		
 		printf("err: %f\n", err);

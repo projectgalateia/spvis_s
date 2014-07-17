@@ -47,8 +47,8 @@ private:
 		void propagate(Layer<K, M> &l)
 		{
 			cblas_scopy(N, B, 1, A, 1);
-			cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-				N, 1, M, 1.0f, (float *)W, M, l.H, 1, 1.0f, A, 1);
+			cblas_sgemv(CblasRowMajor, CblasNoTrans,
+				N, M, 1.0f, (float *)W, M, l.H, 1, 1.0f, A, 1);
 
 			for (int i = 0; i < N; ++i) {
 				H[i] = step_function(A[i]);
@@ -58,21 +58,19 @@ private:
 		template<size_t K>
 		void backpropagate(Layer<K, M> &l)
 		{
-			cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,
-				N, M, 1, 1.0f, dA, 1, l.H, M, 0.0f, (float *)dW, M); 
-
 			cblas_saxpy(N, dt, dA, 1, B, 1);
 			
-			cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans,
-				M, 1, N, 1.0f, (float *)W, M, dA, 1, 0.0f, l.dH, 1);
+			cblas_sgemv(CblasRowMajor, CblasTrans,
+				N, M, 1.0f, (float *)W, M, dA, 1, 0.0f, l.dH, 1);
+
+			cblas_sger(CblasRowMajor, 
+				N, M, dt, dA, 1, l.H, 1, (float *)W, M); 
 
 			for (int i = 0; i < M; ++i) {
 				const float g = step_function(l.A[i]);
 
 				l.dA[i] = g * (1 - g) * dH[i];
 			}
-
-			cblas_saxpy(M * N, dt, (float *)dW, 1, (float *)W, 1);
 		}
 
 		void setOutput(float O[N])
@@ -92,8 +90,8 @@ private:
 
 	TrainData data;
 	Layer<1,  2> input;
-	Layer<2, 10> l1;
-	Layer<10,15> l2;
+	Layer<2, 15> l1;
+	Layer<15,15> l2;
 	Layer<15, 2> output;
 
 	void calc(const Point &p, Likelihood &l)
@@ -156,7 +154,7 @@ public:
 
 		err /= data.size();
 
-		//printf("Error: %f\n", err);
+		printf("Error: %f\n", err);
 	}
 
 	void classify(const Point &point, Likelihood &l)

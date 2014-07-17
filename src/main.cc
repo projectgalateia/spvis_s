@@ -13,6 +13,7 @@
 
 #include <map>
 #include <vector>
+#include <chrono>
 #include <thread>
 #include <mutex>
 #include <iostream>
@@ -196,7 +197,14 @@ int main(int argc, char **argv)
 
 	std::thread step_thread([]()
 	{
+		int cnt = 0;
+
 		while (true) {
+			if (++cnt > 5000) {
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				cnt = 0;
+			}
+
 			thread_mutex.lock();
 			if (!run_step) {
 				thread_mutex.unlock();
