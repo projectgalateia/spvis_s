@@ -199,9 +199,12 @@ int main(int argc, char **argv)
 	{
 		int cnt = 0;
 
+		using std::this_thread::sleep_for;
+		using std::chrono::milliseconds;
+
 		while (true) {
 			if (++cnt > 5000) {
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				sleep_for(milliseconds(100));
 				cnt = 0;
 			}
 
