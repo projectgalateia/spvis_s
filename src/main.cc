@@ -52,6 +52,8 @@ struct PointColor {
 	float rgb[3];
 };
 
+static bool run_step = true;
+
 static void display()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -132,6 +134,13 @@ static void keyboard(unsigned char key, int x, int y)
 		classifier->initialize(points);
 		thread_mutex.unlock();
 	}
+
+	if (key == 't') {
+		thread_mutex.lock();
+		run_step = !run_step;
+		printf("run_step = %d\n", run_step);
+		thread_mutex.unlock();
+	}
 }
 
 static void special(int key, int x, int y)
@@ -182,13 +191,18 @@ int main(int argc, char **argv)
 	classifier = cvec[idx];
 
 	std::thread step_thread([]()
-		{
+	{
 		while (true) {
-		thread_mutex.lock();
-		classifier->step();
-		thread_mutex.unlock();
+			thread_mutex.lock();
+			if (!run_step) {
+				thread_mutex.unlock();
+				continue;
+			}
+
+			classifier->step();
+			thread_mutex.unlock();
 		}
-		});
+	});
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);

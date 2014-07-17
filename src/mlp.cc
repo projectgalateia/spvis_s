@@ -156,7 +156,7 @@ public:
 
 		err /= data.size();
 
-		printf("Error: %f\n", err);
+		//printf("Error: %f\n", err);
 	}
 
 	void classify(const Point &point, Likelihood &l)
