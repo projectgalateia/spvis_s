@@ -122,6 +122,12 @@ static void reshape(int w, int h)
 
 	gluOrtho2D(0, w, h, 0);
 	glViewport(0, 0, w, h);
+
+	thread_mutex.lock();
+	classifier->initialize(points, pvector);
+	thread_mutex.unlock();
+
+	display();
 }
 
 static void keyboard(unsigned char key, int x, int y)

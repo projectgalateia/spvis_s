@@ -70,3 +70,4 @@ public:
 		calc(point, l);
 	}
 } classifier;
+
