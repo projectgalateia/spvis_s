@@ -24,7 +24,7 @@ private:
 
 	FPoint map(const Point &p)
 	{
-		FPoint ret = {p.x / screen_w, p.y / screen_h};
+		FPoint ret = {1.0f - 2.0f * p.x / screen_w, 1.0f - 2.0f * p.y / screen_h};
 
 		return ret;
 	}
